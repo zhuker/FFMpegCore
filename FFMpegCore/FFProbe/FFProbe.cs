@@ -195,7 +195,7 @@ namespace FFMpegCore
         private static Instance PrepareFrameAnalysisInstance(string filePath, int outputCapacity, FFOptions ffOptions)
             => PrepareInstance($"-loglevel error -print_format json -show_frames -v quiet -sexagesimal \"{filePath}\"", outputCapacity, ffOptions);
         private static Instance PreparePacketAnalysisInstance(string filePath, int outputCapacity, FFOptions ffOptions)
-            => PrepareInstance($"-loglevel error -print_format json -show_packets -v quiet -sexagesimal \"{filePath}\"", outputCapacity, ffOptions);
+            => PrepareInstance($"-loglevel error -print_format json -show_packets -v quiet \"{filePath}\"", outputCapacity, ffOptions);
         
         private static Instance PrepareInstance(string arguments, int outputCapacity, FFOptions ffOptions)
         {
