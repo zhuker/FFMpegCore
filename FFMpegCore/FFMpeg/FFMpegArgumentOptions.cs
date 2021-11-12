@@ -7,8 +7,6 @@ namespace FFMpegCore
 {
     public class FFMpegArgumentOptions : FFMpegArgumentsBase
     {
-        internal FFMpegArgumentOptions() { }
-
         public FFMpegArgumentOptions WithAudioCodec(Codec audioCodec) => WithArgument(new AudioCodecArgument(audioCodec));
         public FFMpegArgumentOptions WithAudioCodec(string audioCodec) => WithArgument(new AudioCodecArgument(audioCodec));
         public FFMpegArgumentOptions WithAudioBitrate(AudioQuality audioQuality) => WithArgument(new AudioBitrateArgument(audioQuality));
@@ -69,6 +67,16 @@ namespace FFMpegCore
         public FFMpegArgumentOptions WithArgument(IArgument argument)
         {
             Arguments.Add(argument);
+            return this;
+        }
+
+        public FFMpegArgumentOptions AddOptions(FFMpegArgumentOptions options)
+        {
+            foreach (var arg in options.Arguments)
+            {
+                Arguments.Add(arg);
+            }
+
             return this;
         }
     }
