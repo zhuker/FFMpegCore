@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using FFMpegCore.Arguments;
@@ -87,7 +88,6 @@ namespace FFMpegCore
         {
             if (!File.Exists(filePath)) 
                 throw new FFMpegException(FFMpegExceptionType.File, $"No file found at '{filePath}'");
-            
             using var instance = PrepareStreamAnalysisInstance(filePath, outputCapacity, ffOptions ?? GlobalFFOptions.Current);
             var exitCode = await instance.FinishedRunning().ConfigureAwait(false);
             if (exitCode != 0)
@@ -106,12 +106,20 @@ namespace FFMpegCore
             return ParseFramesOutput(instance);
         }
 
-        public static async Task<FFProbePackets> GetPacketsAsync(string filePath, int outputCapacity = int.MaxValue, FFOptions? ffOptions = null)
+        public static async Task<FFProbePackets> GetPacketsAsync(string filePath,
+            int outputCapacity = int.MaxValue, FFOptions? ffOptions = null, bool checkExists = true,
+            Action<FFMpegArgumentOptions>? customOptions = null)
         {
-            if (!File.Exists(filePath))
+            if (checkExists && !File.Exists(filePath))
                 throw new FFMpegException(FFMpegExceptionType.File, $"No file found at '{filePath}'");
+            FFMpegArgumentOptions opts = null;
+            if (customOptions != null)
+            {
+                opts = new FFMpegArgumentOptions();
+                customOptions(opts);
+            } 
 
-            using var instance = PreparePacketAnalysisInstance(filePath, outputCapacity, ffOptions ?? GlobalFFOptions.Current);
+            using var instance = PreparePacketAnalysisInstance(filePath, outputCapacity, ffOptions ?? GlobalFFOptions.Current, opts);
             await instance.FinishedRunning().ConfigureAwait(false);
             return ParsePacketsOutput(instance);
         }
@@ -194,9 +202,19 @@ namespace FFMpegCore
             => PrepareInstance($"-loglevel error -print_format json -show_format -sexagesimal -show_streams \"{filePath}\"", outputCapacity, ffOptions);
         private static Instance PrepareFrameAnalysisInstance(string filePath, int outputCapacity, FFOptions ffOptions)
             => PrepareInstance($"-loglevel error -print_format json -show_frames -v quiet -sexagesimal \"{filePath}\"", outputCapacity, ffOptions);
-        private static Instance PreparePacketAnalysisInstance(string filePath, int outputCapacity, FFOptions ffOptions)
-            => PrepareInstance($"-loglevel error -print_format json -show_packets -v quiet \"{filePath}\"", outputCapacity, ffOptions);
-        
+        private static Instance PreparePacketAnalysisInstance(string filePath, int outputCapacity, FFOptions ffOptions, FFMpegArgumentOptions? opts = null)
+        {
+            var arguments = $"-loglevel error -print_format json -show_packets -v quiet \"{filePath}\"";
+            if (opts != null)
+            {
+                var extra = string.Join(" ", opts.Arguments.Select(x => x.Text));
+                 arguments = $"-loglevel error -print_format json -show_packets -v quiet {extra} \"{filePath}\"";
+            }
+
+            return PrepareInstance(arguments,
+                outputCapacity, ffOptions);
+        }
+
         private static Instance PrepareInstance(string arguments, int outputCapacity, FFOptions ffOptions)
         {
             FFProbeHelper.RootExceptionCheck();
