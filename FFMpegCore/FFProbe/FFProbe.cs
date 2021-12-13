@@ -84,9 +84,9 @@ namespace FFMpegCore
             
             return ParseOutput(instance);
         }
-        public static async Task<IMediaAnalysis> AnalyseAsync(string filePath, int outputCapacity = int.MaxValue, FFOptions? ffOptions = null)
+        public static async Task<IMediaAnalysis> AnalyseAsync(string filePath, int outputCapacity = int.MaxValue, FFOptions? ffOptions = null, bool checkExists = true)
         {
-            if (!File.Exists(filePath)) 
+            if (checkExists && !File.Exists(filePath)) 
                 throw new FFMpegException(FFMpegExceptionType.File, $"No file found at '{filePath}'");
             using var instance = PrepareStreamAnalysisInstance(filePath, outputCapacity, ffOptions ?? GlobalFFOptions.Current);
             var exitCode = await instance.FinishedRunning().ConfigureAwait(false);
