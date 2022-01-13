@@ -20,7 +20,7 @@ namespace FFMpegCore
         private Action<string, DataType>? _onOutput;
         private TimeSpan? _totalTimespan;
 
-        internal FFMpegArgumentProcessor(FFMpegArguments ffMpegArguments)
+        public FFMpegArgumentProcessor(FFMpegArguments ffMpegArguments)
         {
             _ffMpegArguments = ffMpegArguments;
         }
