@@ -84,11 +84,11 @@ namespace FFMpegCore
             
             return ParseOutput(instance);
         }
-        public static async Task<IMediaAnalysis> AnalyseAsync(string filePath, int outputCapacity = int.MaxValue, FFOptions? ffOptions = null, bool checkExists = true)
+        public static async Task<IMediaAnalysis> AnalyseAsync(string filePath, int outputCapacity = int.MaxValue, FFOptions? ffOptions = null, bool checkExists = true, long timeoutUsec = 0)
         {
             if (checkExists && !File.Exists(filePath)) 
                 throw new FFMpegException(FFMpegExceptionType.File, $"No file found at '{filePath}'");
-            using var instance = PrepareStreamAnalysisInstance(filePath, outputCapacity, ffOptions ?? GlobalFFOptions.Current);
+            using var instance = PrepareStreamAnalysisInstance(filePath, outputCapacity, ffOptions ?? GlobalFFOptions.Current, timeoutUsec);
             var exitCode = await instance.FinishedRunning().ConfigureAwait(false);
             if (exitCode != 0)
                 throw new FFMpegException(FFMpegExceptionType.Process, $"ffprobe exited with non-zero exit-code ({exitCode} - {string.Join("\n", instance.ErrorData)})", null, string.Join("\n", instance.ErrorData));
@@ -96,19 +96,19 @@ namespace FFMpegCore
             return ParseOutput(instance);
         }
 
-        public static async Task<FFProbeFrames> GetFramesAsync(string filePath, int outputCapacity = int.MaxValue, FFOptions? ffOptions = null)
+        public static async Task<FFProbeFrames> GetFramesAsync(string filePath, int outputCapacity = int.MaxValue, FFOptions? ffOptions = null, long timeoutUsec = 0)
         {
             if (!File.Exists(filePath))
                 throw new FFMpegException(FFMpegExceptionType.File, $"No file found at '{filePath}'");
 
-            using var instance = PrepareFrameAnalysisInstance(filePath, outputCapacity, ffOptions ?? GlobalFFOptions.Current);
+            using var instance = PrepareFrameAnalysisInstance(filePath, outputCapacity, ffOptions ?? GlobalFFOptions.Current, timeoutUsec);
             await instance.FinishedRunning().ConfigureAwait(false);
             return ParseFramesOutput(instance);
         }
 
         public static async Task<FFProbePackets> GetPacketsAsync(string filePath,
             int outputCapacity = int.MaxValue, FFOptions? ffOptions = null, bool checkExists = true,
-            Action<FFMpegArgumentOptions>? customOptions = null)
+            Action<FFMpegArgumentOptions>? customOptions = null, long timeoutUsec = 0)
         {
             if (checkExists && !File.Exists(filePath))
                 throw new FFMpegException(FFMpegExceptionType.File, $"No file found at '{filePath}'");
@@ -119,7 +119,7 @@ namespace FFMpegCore
                 customOptions(opts);
             } 
 
-            using var instance = PreparePacketAnalysisInstance(filePath, outputCapacity, ffOptions ?? GlobalFFOptions.Current, opts);
+            using var instance = PreparePacketAnalysisInstance(filePath, outputCapacity, ffOptions ?? GlobalFFOptions.Current, opts, timeoutUsec);
             await instance.FinishedRunning().ConfigureAwait(false);
             return ParsePacketsOutput(instance);
         }
@@ -198,13 +198,13 @@ namespace FFMpegCore
         }
 
 
-        private static Instance PrepareStreamAnalysisInstance(string filePath, int outputCapacity, FFOptions ffOptions)
-            => PrepareInstance($"-loglevel error -print_format json -show_format -sexagesimal -show_streams \"{filePath}\"", outputCapacity, ffOptions);
-        private static Instance PrepareFrameAnalysisInstance(string filePath, int outputCapacity, FFOptions ffOptions)
-            => PrepareInstance($"-loglevel error -print_format json -show_frames -v quiet -sexagesimal \"{filePath}\"", outputCapacity, ffOptions);
-        private static Instance PreparePacketAnalysisInstance(string filePath, int outputCapacity, FFOptions ffOptions, FFMpegArgumentOptions? opts = null)
+        private static Instance PrepareStreamAnalysisInstance(string filePath, int outputCapacity, FFOptions ffOptions, long timeoutUsec = 0)
+            => PrepareInstance($"-loglevel error -timeout {timeoutUsec} -print_format json -show_format -sexagesimal -show_streams \"{filePath}\"", outputCapacity, ffOptions);
+        private static Instance PrepareFrameAnalysisInstance(string filePath, int outputCapacity, FFOptions ffOptions, long timeoutUsec = 0)
+            => PrepareInstance($"-loglevel error -timeout {timeoutUsec} -print_format json -show_frames -v quiet -sexagesimal \"{filePath}\"", outputCapacity, ffOptions);
+        private static Instance PreparePacketAnalysisInstance(string filePath, int outputCapacity, FFOptions ffOptions, FFMpegArgumentOptions? opts = null, long timeoutUsec = 0)
         {
-            var arguments = $"-loglevel error -print_format json -show_packets -v quiet \"{filePath}\"";
+            var arguments = $"-loglevel error -timeout {timeoutUsec} -print_format json -show_packets -v quiet \"{filePath}\"";
             if (opts != null)
             {
                 var extra = string.Join(" ", opts.Arguments.Select(x => x.Text));
