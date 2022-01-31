@@ -199,12 +199,30 @@ namespace FFMpegCore
 
 
         private static Instance PrepareStreamAnalysisInstance(string filePath, int outputCapacity, FFOptions ffOptions, long timeoutUsec = 0)
-            => PrepareInstance($"-loglevel error -timeout {timeoutUsec} -print_format json -show_format -sexagesimal -show_streams \"{filePath}\"", outputCapacity, ffOptions);
+        {
+            var arguments = $"-loglevel error -print_format json -show_format -sexagesimal -show_streams \"{filePath}\"";
+            if (timeoutUsec > 0)
+                arguments = $"-timeout {timeoutUsec} " + arguments;
+            return PrepareInstance(
+                arguments,
+                outputCapacity, ffOptions);
+        }
+
         private static Instance PrepareFrameAnalysisInstance(string filePath, int outputCapacity, FFOptions ffOptions, long timeoutUsec = 0)
-            => PrepareInstance($"-loglevel error -timeout {timeoutUsec} -print_format json -show_frames -v quiet -sexagesimal \"{filePath}\"", outputCapacity, ffOptions);
+        {
+            var arguments = $"-loglevel error -print_format json -show_frames -v quiet -sexagesimal \"{filePath}\"";
+            if (timeoutUsec > 0)
+                arguments = $"-timeout {timeoutUsec} " + arguments;
+            return PrepareInstance(
+                arguments,
+                outputCapacity, ffOptions);
+        }
+
         private static Instance PreparePacketAnalysisInstance(string filePath, int outputCapacity, FFOptions ffOptions, FFMpegArgumentOptions? opts = null, long timeoutUsec = 0)
         {
-            var arguments = $"-loglevel error -timeout {timeoutUsec} -print_format json -show_packets -v quiet \"{filePath}\"";
+            var arguments = $"-loglevel error -print_format json -show_packets -v quiet \"{filePath}\"";
+            if (timeoutUsec > 0)
+                arguments = $"-timeout {timeoutUsec} " + arguments;
             if (opts != null)
             {
                 var extra = string.Join(" ", opts.Arguments.Select(x => x.Text));
