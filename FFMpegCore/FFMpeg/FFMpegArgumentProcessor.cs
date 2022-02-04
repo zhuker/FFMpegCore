@@ -161,6 +161,8 @@ namespace FFMpegCore
                 StandardErrorEncoding = ffOptions.Encoding,
                 WorkingDirectory = ffOptions.WorkingDirectory
             };
+            //when ffmpeg is launched with "cache:http://myurl" it will create a temporary file in $TMPDIR
+            startInfo.EnvironmentVariables["TMPDIR"] = ffOptions.TemporaryFilesFolder;
             var instance = new Instance(startInfo);
             cancellationTokenSource = new CancellationTokenSource();
 
