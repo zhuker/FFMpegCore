@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace FFMpegCore
@@ -48,6 +49,14 @@ namespace FFMpegCore
 
         private VideoStream ParseVideoStream(FFProbeStream stream)
         {
+            object? rotation = null;
+            stream.SideDataList?.FirstOrDefault(d => d.ContainsKey("rotation"))?.TryGetValue("rotation", out rotation);
+            int rotate;
+            if (rotation is JsonElement {ValueKind: JsonValueKind.Number} jsonElement)
+                rotate = (int) jsonElement.GetDouble();
+            else
+                rotate = (int) float.Parse(stream.GetRotate() ?? "0");
+
             return new VideoStream
             {
                 Index = stream.Index,
@@ -65,7 +74,7 @@ namespace FFMpegCore
                 Width = stream.Width ?? 0,
                 Profile = stream.Profile,
                 PixelFormat = stream.PixelFormat,
-                Rotation = (int)float.Parse(stream.GetRotate() ?? "0"),
+                Rotation = rotate,
                 Language = stream.GetLanguage(),
                 Disposition = MediaAnalysisUtils.FormatDisposition(stream.Disposition),
                 Tags = stream.Tags,

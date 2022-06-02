@@ -74,6 +74,9 @@ namespace FFMpegCore
         [JsonPropertyName("disposition")]
         public Dictionary<string, int> Disposition { get; set; } = null!;
 
+        [JsonPropertyName("side_data_list")]
+        public List<Dictionary<string, object>>? SideDataList { get; set; } = null!;
+
         [JsonPropertyName("tags")]
         public Dictionary<string, string> Tags { get; set; } = null!;
     }
